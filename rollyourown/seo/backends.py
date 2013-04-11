@@ -158,7 +158,13 @@ class PathBackend(MetadataBackend):
     unique_together = (("_path",),)
 
     def get_instances(self, queryset, path, context):
-        return queryset.filter(_path=path)
+        return queryset.extra(
+            where=[
+                '%s ILIKE _path'
+            ],
+            params=[path]
+        ).extra(select={'_prefix_length': 'char_length(_path)'}) \
+        .extra(order_by=['-_prefix_length'])
 
     def get_model(self, options):
         class PathMetadataBase(MetadataBaseModel):
